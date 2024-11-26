@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using Microsoft.Identity.Client;
 using SqlClient.Domain;
 using SqlClient.SeedWork;
 
@@ -76,4 +77,25 @@ public class Database(string connectionString) : IDatabase
     public async ValueTask DisposeAsync() => await connection.DisposeAsync();
 
     public void Dispose() => connection.Dispose();
+
+    public void InsertMultiple(IEnumerable<string> notes)
+    {
+        const string query = "INSERT INTO Notes (Note, Inserted) VALUES (@Note, @Inserted)";
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+      
+            foreach (var note in notes)
+            {
+                using var command = new SqlCommand(query, connection, transaction);
+                command.Parameters.AddWithValue("@Note", note.Trim());
+                command.Parameters.AddWithValue("@Inserted", DateTimeOffset.Now);
+
+                command.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+        connection.Close();
+    
+    }
+
 }

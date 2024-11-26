@@ -4,7 +4,7 @@ using static System.Console;
 
 namespace SqlClient;
 
-public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
+public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable 
 {
     public void Work()
     {
@@ -46,6 +46,9 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
                         Delete();
                         break;
                     case "5":
+                        InsertMultiple();
+                        break;
+                    case "6":
                         return;
                     default:
                         WriteLine("Invalid choice. Please try again.");
@@ -67,7 +70,7 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
 
         if (string.IsNullOrEmpty(note))
         {
-            WriteLine("Note cannot be noll or empty.");
+            WriteLine("Note cannot be null or empty.");
             return;
         }
 
@@ -121,8 +124,22 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
             WriteLine("Invalid Id. Please enter a valid integer.");
         }
     }
-    
-    public async ValueTask DisposeAsync() => await database.DisposeAsync();
+    private void InsertMultiple()
+    {
+        Write("Enter notes separated by ',' or ';': ");
+        var input = ReadLine();
 
+        if (string.IsNullOrEmpty(input))
+        {
+            WriteLine("Input cannot be null or empty.");
+            return;
+        }
+        var notes = input.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                         .Select(note => note.Trim())
+                         .Where(note => !string.IsNullOrEmpty(note));
+        database.InsertMultiple(notes);
+        WriteLine($"{notes.Count()} notes inserted successfully.");
+    }
+    public async ValueTask DisposeAsync() => await database.DisposeAsync();
     public void Dispose() => database.Dispose();
 }
